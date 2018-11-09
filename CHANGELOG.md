@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## 2.4.13-sp-1 (2018-11-09)
+
+### SECURITY UPDATES
+
+Apply changes from zend-http release 2.8.1
+- **ZF2018-01**: - This release modifies how `Zend\Http\PhpEnvironment\Request` marshals the
+  request URI. In prior releases, we would attempt to inspect the
+  `X-Rewrite-Url` and `X-Original-Url` headers, using their values, if present.
+  These headers are issued by the ISAPI_Rewrite module for IIS (developed by
+  HeliconTech). However, we have no way of guaranteeing that the module is what
+  issued the headers, making it an unreliable source for discovering the URI. As
+  such, we have removed this feature in this release of zend-http.
+  If you are developing a zend-mvc application, you can mimic the
+  functionality by adding a bootstrap listener like the following:
+  ```php
+  public function onBootstrap(MvcEvent $mvcEvent)
+  {
+      $request = $mvcEvent->getRequest();
+      $requestUri = null;
+       $httpXRewriteUrl = $request->getHeader('X-Rewrite-Url');
+      if ($httpXRewriteUrl) {
+          $requestUri = $httpXRewriteUrl->getFieldValue();
+      }
+       $httpXOriginalUrl = $request->getHeader('X-Original-Url');
+      if ($httpXOriginalUrl) {
+          $requestUri = $httpXOriginalUrl->getFieldValue();
+      }
+       if ($requestUri) {
+          $request->setUri($requestUri)
+      }
+  }
+  ```
+  If you use a listener such as the above, make sure you also instruct your web
+  server to strip any incoming headers of the same name so that you can
+  guarantee they are issued by the ISAPI_Rewrite module.
+
 ## 2.4.13 (2017-07-13)
 
 - Restores php 5.3 compat in HeaderValue.
